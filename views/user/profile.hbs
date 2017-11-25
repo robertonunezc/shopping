@@ -1,0 +1,10 @@
+<h1>user profile</h1>
+{{ user.email }}
+<h2>Orders</h2>
+{{#if orders }}
+    {{#each orders }}
+        <p>{{this.adress}}</p>
+    {{/each}}
+{{else}}
+    <p>No hay ordenes</p>
+{{/if}}
