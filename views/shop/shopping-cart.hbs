@@ -1,14 +1,14 @@
-{{# if this.products }}
+{{# if productsCart }}
     <div class="row">
         <div class="col-sm-6 col-md-6 col-md-offset-3 col-sm-offset-3">
             <ul class="list-group">
-                {{#each products}}
+                {{#each productsCart}}
                     <!--products son los grupos de productos comprados en cada item esta el
                     producto, la cantidad de items q hay d ese producto y precio total-->
                     <li class="list-group-item">
-                        <span class="badge badge-warning">{{this.qty}}</span>
-                        <span style="font-weight: bold">{{this.item.title}}</span>
-                        <span class="label label-primary">${{this.price}}</span>
+                        <span class="badge badge-warning">{{this.getProduct.qty}}</span>
+                        <span style="font-weight: bold">{{this.getProduct.title}}</span>
+                        <span class="label label-primary">${{this.getProduct.price}}</span>
                         <div class="btn-group">
                             <button type="button" class="btn btn-primary btn-xs dropdown-toggle" data-toggle="dropdown"
                                     aria-haspopup="true" aria-expanded="false">

@@ -4,10 +4,11 @@ let csrf = require('csurf');
 let passport = require('passport');
 let models = require('../models');
 let csrfProtection = csrf();
+let autMiddlewares = require('../middlewares/auth');
 
 router.use(csrfProtection);
 
-router.get('/profile', isLoggedIn, (req, res, next) => {
+router.get('/profile', autMiddlewares.isLoggedIn, (req, res, next) => {
     models.Order.findAll({
         where: {UserId: req.user.id}
     })
@@ -20,13 +21,13 @@ router.get('/profile', isLoggedIn, (req, res, next) => {
 
 });
 
-router.get('/logout', isLoggedIn, function (req, res, next) {
+router.get('/logout', autMiddlewares.isLoggedIn, function (req, res, next) {
     req.logout();
     res.redirect('/')
 });
 
 //esta ruta se aplica a todas las rutas q hay debajo de ellas  es decir aplica el middleware notLoggedIn a todas
-router.use('/', notLoggedIn, function (req, res, next) {
+router.use('/', autMiddlewares.notLoggedIn, function (req, res, next) {
     return next();
 });
 
@@ -79,18 +80,3 @@ router.post('/signin', passport.authenticate('local.signin', {
 
 module.exports = router;
 
-function isLoggedIn(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
-    } else {
-        res.redirect('/');
-    }
-}
-
-function notLoggedIn(req, res, next) {
-    if (!req.isAuthenticated()) {
-        return next()
-    } else {
-        res.redirect('/');
-    }
-}
