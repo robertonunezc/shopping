@@ -15,37 +15,62 @@ router.get('/', function (req, res, next) {
 
 });
 
-router.get('/add-to-cart/:id', middlewares.isLoggedIn, async function (req, res, next) {
+router.get('/add-to-cart/:id', middlewares.isLoggedIn, function (req, res, next) {
     const productId = req.params.id;
     const userId = req.user.id;
-    let productsCart = [];
+    const productsCart = [];
     let totalPrice = 0;
-    let product = await  models.Product.findById(productId);
-    let cart = await  models.Cart.findOne({where: req.user.id});
-    if (cart === null) {
-        cart = await models.Cart.build({
-            UserId: userId,
-            totalPrice: product.price,
-            totalQty: 1
-        }).save();
-        let productCart = await models.ProductCart.build({
-            CartId: cart.id,
-            ProductId: productId,
-            totalPrice: product.price,
-            totalQty: 1
-        }).save();
-        totalPrice = product.price;
-        productsCart.push(productCart)
+    models.Product
+        .findById(productId)
+        .then(product => {
+            //buscamos el carrito
+            models.Cart.findOne({where: req.user.id})
+        })
+        .then(cart => {
+            if (cart === null) {
+                //creamos el carrito nuevo
+                let newCart = models.Cart
+                    .build({
+                        UserId: userId,
+                        totalPrice: product.price,
+                        totalQty: 1
+                    })
+                    .save()
+                    .then(cart => {
+                        //creamos el ProductoCart
+                        models.ProductCart.build({
+                            cartId: cart.id,
+                            productId: productId,
+                            totalPrice: product.price,
+                            totalQty: 1
+                        })
+                            .save()
+                            .then(productcart => {
+                                productsCart.push(productcart)
+                            })
+                    })
 
-    }
-    productsCart = await models.ProductCart.findAll({where: {CartId: cart.id}});
-    for(let product of productsCart){
-        console.log(product.getProduct().id);
-    }
-    return res.render('shop/shopping-cart', {
-        totalPrice: totalPrice,
-        productsCart: productsCart
-    });
+
+            }
+            if (cart !== null) {
+                totalPrice = cart.totalPrice;
+                models.ProductCart.findAll({
+                    where: {cartId: cart.id},
+                    include: [{
+                        model: models.Product,
+                        as: 'product'
+                    }]
+                });
+            }
+            return res.render('shop/shopping-cart',
+                {
+                    totalPrice: totalPrice,
+                    productsCart: productsCart
+                })
+
+        })
+    ;
+
 
 });
 
