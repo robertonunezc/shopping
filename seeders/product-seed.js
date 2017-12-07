@@ -7,25 +7,25 @@ sequelize
         var products = [
             models.Product.build({
                 imagePath: 'http://liquidationsports.com/common/images/products/large/58767lrg.jpg',
-                title: 'My First Product',
+                title: 'TV',
                 descripcion: ' Description of my first product',
                 price: 110
             }),
             models.Product.build({
                 imagePath: 'http://liquidationsports.com/common/images/products/large/58767lrg.jpg',
-                title: 'My First Product',
+                title: 'Laptop',
                 descripcion: ' Description of my first product',
                 price: 110
             }),
             models.Product.build({
                 imagePath: 'http://liquidationsports.com/common/images/products/large/58767lrg.jpg',
-                title: 'My First Product',
+                title: 'AppleWatch',
                 descripcion: ' Description of my first product',
                 price: 110
             }),
             models.Product.build({
                 imagePath: 'http://liquidationsports.com/common/images/products/large/58767lrg.jpg',
-                title: 'My First Product',
+                title: 'Audio BAr',
                 descripcion: ' Description of my first product',
                 price: 110
             })
