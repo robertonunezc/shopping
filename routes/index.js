@@ -1,9 +1,9 @@
-var express = require('express');
-var router = express.Router();
-var models = require('../models');
+let express = require('express');
+let router = express.Router();
+let models = require('../models');
 let middlewares = require('../middlewares/auth');
 /* GET home page. */
-router.get('/', function (req, res, next) {
+router.get('/', function (req, res) {
     models.Product
         .all()
         .then(products => {
@@ -15,92 +15,102 @@ router.get('/', function (req, res, next) {
 
 });
 
-router.get('/add-to-cart/:id', middlewares.isLoggedIn, function (req, res, next) {
+router.get('/shopping-cart/', middlewares.isLoggedIn, function (req, res) {
+    models.ProductCart.findAll({
+        where: {
+            cartId: cart.id,
+        },
+        include: [{
+            model: models.Product,
+            as: 'product'
+        }]
+    })
+        .then(productCart => {
+            productsCart = productCart;
+            return res.render('shop/shopping-cart',
+                {
+                    totalPrice: totalPrice,
+                    productsCart: productsCart
+                })
+        })
+        .catch(err => {
+            console.log('ERROR:', err);
+            return res.redirect('/');
+        });
+});
+
+router.get('/add-to-cart/:id', middlewares.isLoggedIn, async function (req, res) {
     const productId = req.params.id;
     const userId = req.user.id;
     let productsCart = [];
     let totalPrice = 0;
-    // buscamos si el producto existe
-    models.Product
-        .findById(productId)
-        .then(product => {
-            //buscamos el carrito
-            models.Cart.findOne({
-                where: {
-                    UserId: req.user.id
-                }
-            })
-                .then(cart => {
-                    if (cart === null) {
-                        //creamos el carrito nuevo
-                        models.Cart
-                            .build({
-                                UserId: userId,
-                                totalPrice: product.price,
-                                totalQty: 1
-                            })
-                            .save()
-                            .then(cart => {
-                                //creamos el ProductoCart con el producto a agregar
-                                models.ProductCart.build({
-                                    cartId: cart.id,
-                                    productId: productId,
-                                    totalPrice: product.price,
-                                    totalQty: 1
-                                })
-                                    .save()
-                                    .then(productcart => {
-                                        productsCart.push(productcart)
-                                    })
-                            })
-
-
-                    }
-                    if (cart !== null) {
-                        totalPrice = cart.totalPrice;
-                        //buscar el ProductCart de el producto que queremos agregar en el carrito q existe
-
-                        models.ProductCart.findOrCreate({
-                            where: {
-                                cartId: cart.id,
-                                productId: product.id
-                            },
-                            defaults: {
-                                cartId: cart.id,
-                                productId: product.id,
-                                totalPrice: product.price,
-                                totalQty: 1
-                            }
-                        }).spread((productCart, created) => {
-                            if (!created) {
-                                productCart.update({
-                                    totalQty: productCart.totalQty + 1
-                                })
-                            }
-                        });
-                        models.ProductCart.findAll({
-                            where: {
-                                cartId: cart.id,
-                            },
-                            include: [{
-                                model: models.Product,
-                                as: 'product'
-                            }]
-                        })
-                            .then(productCart => {
-                                productsCart = productCart;
-                                return res.render('shop/shopping-cart',
-                                    {
-                                        totalPrice: totalPrice,
-                                        productsCart: productsCart
-                                    })
-                            })
-                        ;
-                    }
+    try {
+        // buscamos si el producto existe
+        let product = await models.Product.findById(productId);
+        let cart = await models.Cart.findOne({
+            where: {
+                UserId: req.user.id
+            }
+        });
+        if (cart === null) {
+            let newCart = await models.Cart
+                .build({
+                    UserId: userId,
+                    totalPrice: product.price,
+                    totalQty: 1
                 })
-        })
+                .save();
 
-    ;
+            let productCart = await models.ProductCart.build({
+                cartId: newCart.id,
+                productId: productId,
+                totalPrice: product.price,
+                totalQty: 1
+            })
+                .save();
+            await productsCart.push(productCart)
+        }
+
+        if (cart !== null) {
+            totalPrice = cart.totalPrice;
+            let productCart = await models.ProductCart.findOne({
+                where: {
+                    cartId: cart.id,
+                    productId: product.id
+                }
+            });
+            if (productCart === null) {
+                await models.ProductCart.build({
+                    cartId: cart.id,
+                    productId: product.id,
+                    totalPrice: product.price,
+                    totalQty: 1
+                }).save();
+            } else {
+                await productCart.update({
+                    totalQty: productCart.totalQty + 1
+                });
+            }
+
+            productsCart = await models.ProductCart.findAll({
+                where: {
+                    cartId: cart.id,
+                },
+                include: [{
+                    model: models.Product,
+                    as: 'product'
+                }]
+            });
+        }
+        return await res.render('shop/shopping-cart',
+            {
+                totalPrice: totalPrice,
+                productsCart: productsCart
+            });
+    } catch (err) {
+        console.log('Http error', err);
+        return res.status(500).send();
+    }
 
 
 });
